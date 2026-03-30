@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>解説 - 宅建マスター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+</head>
+<body>
+  <div class="container">
+    <p class="page-title">宅建マスター</p>
+
+    <!-- 正誤バナー -->
+    <div id="result-banner" class="result-banner result-correct">⭕ 正解！</div>
+
+    <!-- キャラエリア -->
+    <div class="chara-area">
+      <div id="chara-line" class="speech-bubble">よく頑張ったね♡</div>
+      <div class="chara-placeholder" id="chara-placeholder">🧑‍🎓</div>
+      <img id="chara-image" class="chara-image" src="images/chara_01.png" alt="キャラクター"
+           style="display:none;"
+           onload="this.style.display='block'; document.getElementById('chara-placeholder').style.display='none';"
+           onerror="this.style.display='none';">
+    </div>
+
+    <!-- SRSフィードバック（復習モード時） -->
+    <div id="srs-feedback" class="srs-feedback" style="display:none;"></div>
+
+    <!-- 解説カード -->
+    <div id="explanation" class="explanation-card">
+      <div class="explanation-label">正解の選択肢</div>
+      <div id="correct-choice" class="correct-choice-text"></div>
+      <div id="question-meta" class="question-meta"></div>
+      <div id="legacy-note" class="legacy-note" style="display:none;"></div>
+    </div>
+
+    <!-- ブックマークボタン -->
+    <button id="result-bookmark-btn" class="btn result-bookmark-btn">
+      <span id="result-bookmark-icon">☆</span> ブックマーク
+    </button>
+
+    <!-- 次へボタン -->
+    <button id="next-btn" class="btn btn-next">
+      次の問題へ →
+    </button>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const isCorrect    = sessionStorage.getItem('lastCorrect') === '1';
+      const questionId   = sessionStorage.getItem('lastQuestionId');
+      const charaLine    = sessionStorage.getItem('charaLine') || '頑張ってるね♡';
+      const currentIndex = parseInt(sessionStorage.getItem('currentIndex') || '1');
+      const questions    = JSON.parse(sessionStorage.getItem('questions') || '[]');
+
+      // 正誤バナー
+      const banner = document.getElementById('result-banner');
+      if (isCorrect) {
+        banner.textContent = '⭕ 正解！';
+        banner.className = 'result-banner result-correct';
+      } else {
+        banner.textContent = '❌ 不正解';
+        banner.className = 'result-banner result-wrong';
+      }
+
+      // キャラセリフ
+      document.getElementById('chara-line').textContent = charaLine;
+
+      // SRSフィードバック
+      const srsRaw = sessionStorage.getItem('lastSRSResult');
+      if (srsRaw) {
+        const srs = JSON.parse(srsRaw);
+        const el = document.getElementById('srs-feedback');
+        el.style.display = 'block';
+        if (srs.mastered) {
+          el.innerHTML = '🎓 <strong>マスター達成！</strong> 復習リストから卒業しました';
+          el.className = 'srs-feedback srs-mastered';
+        } else if (isCorrect) {
+          const dots = Array.from({length: Storage.MASTERED_LEVEL}, (_, i) =>
+            `<span class="srs-dot ${i < srs.level ? 'filled' : ''}"></span>`
+          ).join('');
+          const dateStr = srs.nextReview.replace(/(\d{4})-(\d{2})-(\d{2})/, '$2月$3日');
+          el.innerHTML = `次回: <strong>${dateStr}</strong> &nbsp;${dots}`;
+          el.className = 'srs-feedback srs-correct';
+        } else {
+          el.innerHTML = '🔁 レベルリセット。<strong>今日中にもう一度確認しよう！</strong>';
+          el.className = 'srs-feedback srs-wrong';
+        }
+      }
+
+      // 解説（正解の選択肢 + 問題メタ情報）
+      const q = questions.find(card => card.id === questionId);
+      if (q) {
+        document.getElementById('correct-choice').textContent = q.correct_choice;
+        document.getElementById('question-meta').textContent =
+          `${q.year} / ${q.field}`;
+
+        // 旧法注記
+        if (q.legacy_note) {
+          const el = document.getElementById('legacy-note');
+          el.textContent = '⚠️ ' + q.legacy_note;
+          el.style.display = 'block';
+        }
+      }
+
+      // ブックマークボタン
+      const bookmarkBtn  = document.getElementById('result-bookmark-btn');
+      const bookmarkIcon = document.getElementById('result-bookmark-icon');
+      if (questionId) {
+        const update = () => {
+          const marked = Storage.isBookmarked(questionId);
+          bookmarkIcon.textContent = marked ? '⭐' : '☆';
+          bookmarkBtn.classList.toggle('result-bookmark-active', marked);
+        };
+        update();
+        bookmarkBtn.onclick = () => { Storage.toggleBookmark(questionId); update(); };
+      }
+
+      // 次へボタン
+      const nextBtn = document.getElementById('next-btn');
+      const remaining    = questions.length - currentIndex;
+      const selectedField = sessionStorage.getItem('selectedField') || 'all';
+      const isSpecial     = selectedField === 'review' || selectedField === 'bookmark';
+      if (remaining <= 0) {
+        nextBtn.textContent = isSpecial ? '結果を見る →' : '今日のまとめへ →';
+        nextBtn.onclick = () => window.location.href = 'complete.html';
+      } else {
+        nextBtn.textContent = `次の問題へ（残り${remaining}問） →`;
+        nextBtn.onclick = () => window.location.href = 'quiz.html';
+      }
+    });
+  </script>
+</body>
+</html>

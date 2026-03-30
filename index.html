@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宅建マスター - 毎日3分で合格へ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="宅建マスター">
+  <link rel="apple-touch-icon" href="images/icon-192.svg">
+</head>
+<body>
+  <div class="container">
+    <p class="page-title">宅建マスター</p>
+
+    <!-- キャラアンロックバナー -->
+    <div id="unlock-banner" class="unlock-banner" style="display:none;"></div>
+
+    <!-- 連続日数バッジ -->
+    <div id="streak-display" class="streak-badge">🔥 読み込み中...</div>
+
+    <!-- 問題数表示 -->
+    <p id="question-count" class="question-count">今日は3問</p>
+
+    <!-- キャラエリア -->
+    <div class="chara-area">
+      <!-- ふきだし（画像の上に表示） -->
+      <div id="chara-line" class="speech-bubble">読み込み中...</div>
+
+      <!-- キャラ画像 -->
+      <div class="chara-placeholder" id="chara-placeholder">🧑‍🎓</div>
+      <img id="chara-image" class="chara-image" src="images/chara_01.png" alt="キャラクター"
+           style="display:none;"
+           onload="this.style.display='block'; document.getElementById('chara-placeholder').style.display='none';"
+           onerror="this.style.display='none';">
+    </div>
+
+    <!-- 今日のタスクカード -->
+    <div id="task-card" class="task-card" style="display:none;"></div>
+
+    <!-- 試験カウントダウン -->
+    <div id="countdown-section" class="countdown-section"></div>
+
+    <!-- スタートボタン -->
+    <button id="start-btn" class="btn btn-primary">今日も始める</button>
+
+    <!-- 復習ボタン（間違いがある場合のみ表示） -->
+    <button id="review-btn" class="btn btn-review" style="display:none;">
+      📝 間違えた問題を復習
+      <span id="review-count" class="review-count-badge"></span>
+    </button>
+
+    <!-- 統計リンク -->
+    <a href="stats.html" class="stats-link">📊 学習統計・設定</a>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

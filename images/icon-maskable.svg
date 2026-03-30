@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- maskable: safe zone is center 80%, so padding 10% each side = 51px -->
+  <rect width="512" height="512" fill="#0f172a"/>
+  <text x="256" y="320" font-family="'Noto Sans JP', sans-serif" font-size="240" font-weight="900" fill="#f59e0b" text-anchor="middle">宅</text>
+  <text x="256" y="410" font-family="'Noto Sans JP', sans-serif" font-size="48" font-weight="700" fill="#475569" text-anchor="middle">マスター</text>
+</svg>

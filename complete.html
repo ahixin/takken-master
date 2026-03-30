@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今日はおわり - 宅建マスター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+</head>
+<body>
+  <div class="container">
+    <p class="page-title">宅建マスター</p>
+
+    <!-- タイトル -->
+    <h1 class="complete-title">今日はここまで！</h1>
+
+    <!-- キャラエリア -->
+    <div class="chara-area">
+      <div id="chara-line" class="speech-bubble">また明日ね♡ 待ってるよ！</div>
+      <div class="chara-placeholder" id="chara-placeholder">🧑‍🎓</div>
+      <img id="chara-image" class="chara-image" src="images/chara_01.png" alt="キャラクター"
+           style="display:none;"
+           onload="this.style.display='block'; document.getElementById('chara-placeholder').style.display='none';"
+           onerror="this.style.display='none';">
+    </div>
+
+    <!-- スコア -->
+    <div class="score-display">
+      <div id="score-number" class="score-number">3 / 3</div>
+      <div class="score-label">今日の正解数</div>
+    </div>
+
+    <!-- 分野別サマリー -->
+    <div id="field-summary" class="field-summary" style="display:none;"></div>
+
+    <!-- 明日の予告 -->
+    <p id="tomorrow-hint" class="tomorrow-hint">明日は4問だよ。また来てね♡</p>
+
+    <!-- ホームへ -->
+    <button class="btn btn-primary" onclick="window.location.href='index.html'">
+      ホームへ戻る
+    </button>
+
+    <!-- デバッグ用：もう一度やる -->
+    <button id="debug-retry-btn" class="btn btn-next" style="display:none;"
+            onclick="window.location.href='field.html'">
+      [DEBUG] もう一度やる
+    </button>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script>
+    // ===== Confetti =====
+    function launchConfetti() {
+      const COLORS = ['#f59e0b','#ec4899','#4ade80','#3b82f6','#c4b5fd','#fb923c'];
+      for (let i = 0; i < 60; i++) {
+        const el = document.createElement('div');
+        const size = 6 + Math.random() * 8;
+        el.style.cssText = [
+          'position:fixed',
+          `left:${Math.random() * 100}vw`,
+          'top:-12px',
+          `width:${size}px`,
+          `height:${size}px`,
+          `background:${COLORS[Math.floor(Math.random() * COLORS.length)]}`,
+          `border-radius:${Math.random() > 0.5 ? '50%' : '2px'}`,
+          `animation:confettiFall ${1.2 + Math.random() * 1.8}s ${Math.random() * 0.8}s linear forwards`,
+          'pointer-events:none',
+          'z-index:9999',
+        ].join(';');
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 3500);
+      }
+    }
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const correct = parseInt(sessionStorage.getItem('correctCount') || '0');
+      const questions = JSON.parse(sessionStorage.getItem('questions') || '[]');
+      const total = questions.length;
+
+      // データ保存（通常モードのみ完了フラグを立てる）
+      const completedField = sessionStorage.getItem('selectedField') || 'all';
+      const isSpecialMode = completedField === 'review' || completedField === 'bookmark';
+
+      // スコア表示
+      document.getElementById('score-number').textContent = `${correct} / ${total}`;
+      document.querySelector('.score-label').textContent = isSpecialMode ? 'セッション結果' : '今日の正解数';
+      if (isSpecialMode) {
+        document.querySelector('.complete-title').textContent =
+          completedField === 'review' ? '復習おわり！' : 'ブックマーク完了！';
+      }
+      let data = Storage.load();
+      if (!isSpecialMode) {
+        data = Storage.completeToday(data, correct, total);
+        Storage.save(data);
+      }
+
+      // 明日の問題数予告（特殊モードでは非表示）
+      const hintEl = document.getElementById('tomorrow-hint');
+      if (isSpecialMode) {
+        hintEl.style.display = 'none';
+      } else {
+        const tomorrowCount = Storage.getTodayQuestionCount(data.streakDays + 1);
+        hintEl.textContent = `明日は ${tomorrowCount} 問だよ。また来てね♡`;
+      }
+
+      // 連続日数に応じたセリフ
+      const streakDays = data.streakDays;
+      let line = 'また明日ね♡ 待ってるよ！';
+      if (correct === total) {
+        line = `全問正解！！最高だよ♡ また明日ね！`;
+      } else if (correct >= total * 0.7) {
+        line = `よくできたね♡ また明日も来てね！`;
+      } else {
+        line = `難しかったね。また明日一緒に頑張ろう♡`;
+      }
+      document.getElementById('chara-line').textContent = line;
+
+      // 分野別サマリー
+      const results = JSON.parse(sessionStorage.getItem('questionResults') || '[]');
+      if (results.length > 0) {
+        const byField = {};
+        results.forEach(r => {
+          if (!byField[r.field]) byField[r.field] = { correct: 0, total: 0 };
+          byField[r.field].total++;
+          if (r.isCorrect) byField[r.field].correct++;
+        });
+        const summaryEl = document.getElementById('field-summary');
+        summaryEl.style.display = 'block';
+        summaryEl.innerHTML = '<div class="field-summary-title">分野別結果</div>' +
+          Object.entries(byField).map(([field, s]) => {
+            const pct = Math.round(s.correct / s.total * 100);
+            return `<div class="field-summary-row">
+              <span class="field-summary-name">${field}</span>
+              <span class="field-summary-score">${s.correct}/${s.total}</span>
+              <div class="field-summary-bar"><div class="field-summary-fill" style="width:${pct}%"></div></div>
+            </div>`;
+          }).join('');
+      }
+
+      // 好成績ならconfetti発射
+      if (total > 0 && correct / total >= 0.7) launchConfetti();
+
+      // DEBUGモード時はもう一度やるボタンを表示
+      if (Storage.DEBUG_MODE) {
+        document.getElementById('debug-retry-btn').style.display = 'block';
+      }
+
+      // sessionStorage をクリア（次回のために）
+      sessionStorage.removeItem('questions');
+      sessionStorage.removeItem('currentIndex');
+      sessionStorage.removeItem('correctCount');
+      sessionStorage.removeItem('lastCorrect');
+      sessionStorage.removeItem('lastQuestionId');
+      sessionStorage.removeItem('charaLine');
+      sessionStorage.removeItem('questionResults');
+      sessionStorage.removeItem('lastSRSResult');
+    });
+  </script>
+</body>
+</html>

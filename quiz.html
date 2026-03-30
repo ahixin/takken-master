@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>問題 - 宅建マスター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <button class="back-btn" onclick="window.location.href='field.html'">← 戻る</button>
+      <p id="progress" class="progress-text">1 / 3 問</p>
+      <button id="bookmark-btn" class="bookmark-btn" title="ブックマーク">☆</button>
+    </div>
+
+    <!-- 周回完了バナー -->
+    <div id="lap-banner" class="lap-banner" style="display:none;"></div>
+
+    <!-- 分野・出典バッジ -->
+    <div class="badge-row">
+      <div id="field-badge" class="field-badge"></div>
+      <div id="year-badge" class="year-badge"></div>
+    </div>
+
+    <!-- 問題カード -->
+    <div class="question-card">
+      <div id="question-context" class="question-context collapsed">読み込み中...</div>
+      <button id="expand-btn" class="expand-btn">▼ 問題文を展開</button>
+      <div class="choice-divider">この選択肢は正解ですか？</div>
+      <div id="choice-text" class="choice-text"></div>
+    </div>
+
+    <!-- ○×ボタン（画面下固定） -->
+    <div class="ox-buttons">
+      <button id="btn-true" class="btn btn-ox btn-true">⭕ 正しい</button>
+      <button id="btn-false" class="btn btn-ox btn-false">❌ 誤り</button>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/quiz.js"></script>
+</body>
+</html>

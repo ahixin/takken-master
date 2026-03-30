@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学習統計 - 宅建マスター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <button class="back-btn" onclick="window.location.href='index.html'">← ホームへ</button>
+      <p class="progress-text" style="font-size:0.85rem;">学習統計</p>
+    </div>
+
+    <!-- 総合スコア -->
+    <div class="stats-card">
+      <div class="stats-card-title">📊 総合成績</div>
+      <div class="stats-grid">
+        <div class="stats-item">
+          <div class="stats-value" id="total-answered">0</div>
+          <div class="stats-label">累計回答数</div>
+        </div>
+        <div class="stats-item">
+          <div class="stats-value accent" id="accuracy">0%</div>
+          <div class="stats-label">正解率</div>
+        </div>
+        <div class="stats-item">
+          <div class="stats-value" id="streak-days">0日</div>
+          <div class="stats-label">現在の連続日数</div>
+        </div>
+        <div class="stats-item">
+          <div class="stats-value accent-green" id="max-streak">0日</div>
+          <div class="stats-label">最長連続記録</div>
+        </div>
+        <div class="stats-item">
+          <div class="stats-value" id="seen-count">0</div>
+          <div class="stats-label">学習済みカード</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 全体進捗 -->
+    <div class="stats-card">
+      <div class="stats-card-title">📚 全体進捗</div>
+      <div class="stats-progress-row">
+        <span class="stats-progress-label" id="overall-label">0 / 1692 問</span>
+        <span class="stats-progress-pct" id="overall-pct">0%</span>
+      </div>
+      <div class="task-progress-bar" style="height:8px;">
+        <div class="task-progress-fill" id="overall-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- 分野別進捗 -->
+    <div class="stats-card">
+      <div class="stats-card-title">🗂️ 分野別進捗</div>
+      <div id="field-stats"></div>
+    </div>
+
+    <!-- SRS状況 -->
+    <div class="stats-card">
+      <div class="stats-card-title">🔁 復習リスト</div>
+      <div class="stats-grid">
+        <div class="stats-item">
+          <div class="stats-value" id="srs-total">0</div>
+          <div class="stats-label">SRS登録数</div>
+        </div>
+        <div class="stats-item">
+          <div class="stats-value accent-green" id="srs-due">0</div>
+          <div class="stats-label">今日の復習</div>
+        </div>
+        <div class="stats-item">
+          <div class="stats-value accent-purple" id="bookmarks">0</div>
+          <div class="stats-label">ブックマーク</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 設定 -->
+    <div class="stats-card">
+      <div class="stats-card-title">⚙️ 設定</div>
+
+      <div class="settings-row">
+        <label class="settings-label">試験日</label>
+        <input type="date" id="exam-date-input" class="settings-input">
+        <button id="save-date-btn" class="settings-btn">保存</button>
+      </div>
+
+      <button id="reset-btn" class="btn settings-reset-btn">
+        ⚠️ 学習データをリセット
+      </button>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script>
+    const FIELDS      = ['権利関係', '宅建業法', '法令上の制限', '税・その他'];
+    const TOTAL_CARDS = Storage.TOTAL_CARDS;
+
+    async function getFieldTotals() {
+      // sessionStorage キャッシュ優先
+      const cached = sessionStorage.getItem('allCards');
+      const cards  = cached ? JSON.parse(cached)
+        : await (await fetch('data/takken_cards.json')).json();
+      if (!cached) sessionStorage.setItem('allCards', JSON.stringify(cards));
+      const totals = {};
+      FIELDS.forEach(f => totals[f] = 0);
+      cards.forEach(c => { if (totals[c.field] !== undefined) totals[c.field]++; });
+      return totals;
+    }
+
+    async function init() {
+      const data       = Storage.load();
+      const seenCount  = Storage.getSeenCount();
+      const totalAnswered = data.totalAnswered || 0;
+      const totalCorrect  = data.totalCorrect  || 0;
+      const accuracy = totalAnswered > 0
+        ? Math.round(totalCorrect / totalAnswered * 100) + '%'
+        : '--';
+
+      // 総合スコア
+      document.getElementById('total-answered').textContent = totalAnswered.toLocaleString();
+      document.getElementById('accuracy').textContent       = accuracy;
+      document.getElementById('streak-days').textContent    = `${data.streakDays || 0}日`;
+      document.getElementById('max-streak').textContent     = `${Storage.getMaxStreak()}日`;
+      document.getElementById('seen-count').textContent     = seenCount.toLocaleString();
+
+      // 全体進捗
+      const overallPct = Math.round(seenCount / TOTAL_CARDS * 100);
+      document.getElementById('overall-label').textContent = `${seenCount} / ${TOTAL_CARDS} 問`;
+      document.getElementById('overall-pct').textContent   = `${overallPct}%`;
+      document.getElementById('overall-fill').style.width  = `${overallPct}%`;
+
+      // 分野別進捗（実データから集計）
+      const FIELD_TOTALS = await getFieldTotals();
+      const fieldStatsEl = document.getElementById('field-stats');
+      fieldStatsEl.innerHTML = FIELDS.map(f => {
+        const prog  = Storage.getFieldProgress(f);
+        const seen  = prog.seen.length;
+        const total = FIELD_TOTALS[f] || 1;
+        const pct   = Math.round(seen / total * 100);
+        const lap   = prog.lap;
+        return `<div class="field-stat-row">
+          <div class="field-stat-header">
+            <span class="field-stat-name">${f}</span>
+            <span class="field-stat-value">${seen}/${total}　${lap > 1 ? `${lap}周目` : ''}</span>
+          </div>
+          <div class="task-progress-bar">
+            <div class="task-progress-fill" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+      }).join('');
+
+      // SRS
+      document.getElementById('srs-total').textContent    = Storage.getWrongCards().length;
+      document.getElementById('srs-due').textContent      = Storage.getDueCards().length;
+      document.getElementById('bookmarks').textContent    = Storage.getBookmarks().length;
+
+      // 設定：試験日
+      const savedDate = localStorage.getItem('examDate') || '2026-10-18';
+      document.getElementById('exam-date-input').value = savedDate;
+    }
+
+    // 試験日保存
+    document.getElementById('save-date-btn').onclick = () => {
+      const val = document.getElementById('exam-date-input').value;
+      if (val) {
+        localStorage.setItem('examDate', val);
+        document.getElementById('save-date-btn').textContent = '✅ 保存済';
+        setTimeout(() => document.getElementById('save-date-btn').textContent = '保存', 1500);
+      }
+    };
+
+    // データリセット
+    document.getElementById('reset-btn').onclick = () => {
+      if (!confirm('学習データをすべてリセットします。\n連続日数・進捗・SRS・ブックマークが消えます。\nよろしいですか？')) return;
+      localStorage.removeItem(Storage.KEY);
+      sessionStorage.clear();
+      alert('リセットしました。');
+      window.location.href = 'index.html';
+    };
+
+    init();
+  </script>
+</body>
+</html>

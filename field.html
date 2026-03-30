@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分野選択 - 宅建マスター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+</head>
+<body>
+  <div class="container">
+    <p class="page-title">宅建マスター</p>
+
+    <!-- キャラエリア -->
+    <div class="chara-area">
+      <div class="speech-bubble">どの分野を練習する？♡</div>
+      <div class="chara-placeholder" id="chara-placeholder">🧑‍🎓</div>
+      <img id="chara-image" class="chara-image" src="images/chara_01.png" alt="キャラクター"
+           style="display:none;"
+           onload="this.style.display='block'; document.getElementById('chara-placeholder').style.display='none';"
+           onerror="this.style.display='none';">
+    </div>
+
+    <p class="field-select-label">学習する分野を選んでください</p>
+
+    <!-- 復習モードボタン -->
+    <button id="review-btn" class="btn btn-review" data-field="review" style="display:none;">
+      <span class="field-icon">📝</span>
+      <span class="field-name">間違えた問題を復習</span>
+      <span class="field-count" id="count-review">0 問</span>
+    </button>
+
+    <!-- ブックマークモードボタン -->
+    <button id="bookmark-mode-btn" class="btn btn-bookmark-mode" data-field="bookmark" style="display:none;">
+      <span class="field-icon">⭐</span>
+      <span class="field-name">ブックマークした問題</span>
+      <span class="field-count" id="count-bookmark">0 問</span>
+    </button>
+
+    <!-- 分野ボタン -->
+    <div id="field-buttons" class="field-buttons">
+      <button class="btn btn-field btn-field-all" data-field="all">
+        <div class="field-btn-main">
+          <span class="field-icon">📚</span>
+          <span class="field-name">すべての分野</span>
+          <span class="field-count" id="count-all">-- 問</span>
+        </div>
+        <div class="field-progress-bar"><div class="field-progress-fill" id="prog-all"></div></div>
+      </button>
+      <button class="btn btn-field" data-field="権利関係">
+        <div class="field-btn-main">
+          <span class="field-icon">⚖️</span>
+          <span class="field-name">権利関係</span>
+          <span class="field-count" id="count-権利関係">-- 問</span>
+        </div>
+        <div class="field-progress-bar"><div class="field-progress-fill" id="prog-権利関係"></div></div>
+      </button>
+      <button class="btn btn-field" data-field="宅建業法">
+        <div class="field-btn-main">
+          <span class="field-icon">🏠</span>
+          <span class="field-name">宅建業法</span>
+          <span class="field-count" id="count-宅建業法">-- 問</span>
+        </div>
+        <div class="field-progress-bar"><div class="field-progress-fill" id="prog-宅建業法"></div></div>
+      </button>
+      <button class="btn btn-field" data-field="法令上の制限">
+        <div class="field-btn-main">
+          <span class="field-icon">📋</span>
+          <span class="field-name">法令上の制限</span>
+          <span class="field-count" id="count-法令上の制限">-- 問</span>
+        </div>
+        <div class="field-progress-bar"><div class="field-progress-fill" id="prog-法令上の制限"></div></div>
+      </button>
+      <button class="btn btn-field" data-field="税・その他">
+        <div class="field-btn-main">
+          <span class="field-icon">💴</span>
+          <span class="field-name">税・その他</span>
+          <span class="field-count" id="count-税・その他">-- 問</span>
+        </div>
+        <div class="field-progress-bar"><div class="field-progress-fill" id="prog-税・その他"></div></div>
+      </button>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script>
+    const FIELDS = ['権利関係', '宅建業法', '法令上の制限', '税・その他'];
+
+    // カード数を非同期で取得して表示
+    async function loadCounts() {
+      try {
+        const res = await fetch('data/takken_cards.json');
+        const cards = await res.json();
+
+        const counts = { all: 0 };
+        FIELDS.forEach(f => counts[f] = 0);
+        cards.forEach(c => {
+          counts.all++;
+          if (counts[c.field] !== undefined) counts[c.field]++;
+        });
+
+        // 進捗を表示
+        const allFields = ['all', ...FIELDS];
+        allFields.forEach(f => {
+          const total = f === 'all' ? counts.all : counts[f];
+          const prog  = Storage.getFieldProgress(f);
+          const seen  = prog.seen.length;
+          const lap   = prog.lap;
+          const pct   = total > 0 ? Math.round(seen / total * 100) : 0;
+
+          const countEl = document.getElementById(`count-${f}`);
+          if (countEl) {
+            countEl.textContent = lap > 1
+              ? `${pct}% (${lap}周目)`
+              : `${seen}/${total}`;
+          }
+          const fillEl = document.getElementById(`prog-${f}`);
+          if (fillEl) fillEl.style.width = `${pct}%`;
+        });
+
+        // カードをキャッシュ
+        sessionStorage.setItem('allCards', JSON.stringify(cards));
+      } catch (e) {
+        console.error('カード読み込み失敗:', e);
+      }
+    }
+
+    // 復習モードボタンの表示
+    const dueCount   = Storage.getDueCards().length;
+    const totalWrong = Storage.getWrongCards().length;
+    const reviewBtn  = document.getElementById('review-btn');
+    if (totalWrong > 0) {
+      reviewBtn.style.display = 'flex';
+      const countEl = document.getElementById('count-review');
+      if (dueCount > 0) {
+        countEl.textContent = `今日 ${dueCount}問`;
+        countEl.style.color = '#4ade80';
+      } else {
+        countEl.textContent = `待機中 ${totalWrong}問`;
+        countEl.style.color = '#64748b';
+        reviewBtn.disabled = true;
+        reviewBtn.style.opacity = '0.5';
+      }
+    }
+
+    // ブックマークモードボタンの表示
+    const bookmarkCount = Storage.getBookmarks().length;
+    const bookmarkModeBtn = document.getElementById('bookmark-mode-btn');
+    if (bookmarkCount > 0) {
+      bookmarkModeBtn.style.display = 'flex';
+      document.getElementById('count-bookmark').textContent = `${bookmarkCount}問`;
+    }
+
+    // 分野選択（復習・ブックマークボタン含む）
+    document.querySelectorAll('.btn-field, #review-btn, #bookmark-mode-btn').forEach(btn => {
+      btn.onclick = () => {
+        const field = btn.dataset.field;
+        const data = Storage.load();
+        const questionCount = Storage.getTodayQuestionCount(data.streakDays);
+
+        sessionStorage.setItem('selectedField', field);
+        sessionStorage.setItem('questionCount', questionCount);
+        sessionStorage.setItem('currentIndex', 0);
+        sessionStorage.setItem('correctCount', 0);
+        // 問題リスト・前セッション残留データをクリア
+        sessionStorage.removeItem('questions');
+        sessionStorage.removeItem('questionResults');
+
+        window.location.href = 'quiz.html';
+      };
+    });
+
+    loadCounts();
+  </script>
+</body>
+</html>

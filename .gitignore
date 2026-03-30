@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+scripts/__pycache__/
+
+# Excel / Office temp
+~$*.xlsx
+*.tmp
+*.xlsx
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/settings.json
+*.swp
+
+# Claude Code internal files
+.claude/
+
+# PDFファイル（バイナリ・大容量）
+data/**/*.pdf
+
+# スクレイピング・デバッグ用テキスト
+data/*_debug.txt
+data/*_test.txt
+data/*.txt
+
+# スクリプト（本番不要）
+scripts/
+
+# サンプルHTML
+data/sample_page.html
