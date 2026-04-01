@@ -3,7 +3,7 @@ name: Build Android APK (TWA)
 on:
   push:
     branches: [ master ]
-  workflow_dispatch:   # 手動実行も可能
+  workflow_dispatch:
 
 jobs:
   build:
@@ -27,27 +27,49 @@ jobs:
       - name: Install Bubblewrap CLI
         run: npm install -g @bubblewrap/cli
 
+      - name: Pre-configure Bubblewrap (JDK + Android SDK パスを設定してインタラクティブ入力をスキップ)
+        run: |
+          mkdir -p ~/.bubblewrap
+          cat > ~/.bubblewrap/config.json << EOF
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$ANDROID_HOME"
+          }
+          EOF
+          echo "Bubblewrap config:"
+          cat ~/.bubblewrap/config.json
+
       - name: Init TWA project
         run: |
           mkdir -p twa-build && cd twa-build
-          bubblewrap init --manifest=https://ahixin.github.io/takken-master/manifest.json \
-            --directory=. \
-            --skip-pwa-shell-update \
-            2>&1 || true
-          # twa-manifest.json が生成されていない場合は手動で作成
+          # config.json が既にあるので JDK 質問はスキップされる
+          # 残りの質問はデフォルト(Enter)で答えてスキップ
+          yes "" | bubblewrap init \
+            --manifest=https://ahixin.github.io/takken-master/manifest.json \
+            --directory=. 2>&1 || true
+
+      - name: Apply TWA manifest overrides
+        run: |
+          cd twa-build
+          # twa-manifest.json が生成されていなければルートからコピー
           if [ ! -f twa-manifest.json ]; then
+            echo "twa-manifest.json not found, copying from root..."
             cp ../twa-manifest.json .
           fi
-
-      - name: Copy TWA manifest if needed
-        run: |
-          if [ ! -f twa-build/twa-manifest.json ]; then
-            cp twa-manifest.json twa-build/
-          fi
+          echo "Using twa-manifest.json:"
+          cat twa-manifest.json
 
       - name: Build APK
         working-directory: twa-build
-        run: bubblewrap build 2>&1
+        run: |
+          yes "" | bubblewrap build 2>&1
+
+      - name: List output files
+        if: always()
+        run: |
+          echo "=== twa-build contents ==="
+          find twa-build -name "*.apk" 2>/dev/null || echo "No APK found"
+          ls -la twa-build/ 2>/dev/null || echo "twa-build not found"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
