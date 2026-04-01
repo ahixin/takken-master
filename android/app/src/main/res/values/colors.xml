@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- テーマカラー: ゴールド #f59e0b -->
+    <color name="colorPrimary">#f59e0b</color>
+    <!-- 背景: ダークネイビー #0f172a -->
+    <color name="colorBackground">#0f172a</color>
+</resources>

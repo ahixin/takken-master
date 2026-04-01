@@ -7,11 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04   # ubuntu-24.04 には Android SDK なし → 22.04 を使用
-
-    env:
-      ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
@@ -23,69 +19,39 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
-
-      - name: Install required Android SDK components
+      - name: Make gradlew executable
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls $ANDROID_HOME/cmdline-tools/ || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
-            "build-tools;34.0.0" \
-            "platforms;android-34" \
-            "platform-tools" 2>&1 || \
-          $ANDROID_HOME/cmdline-tools/*/bin/sdkmanager \
-            "build-tools;34.0.0" \
-            "platforms;android-34" \
-            "platform-tools" 2>&1 || true
-
-      - name: Pre-configure Bubblewrap (JDK + Android SDK をスキップ)
-        run: |
-          mkdir -p ~/.bubblewrap
-          cat > ~/.bubblewrap/config.json << BUBCONF
-          {
-            "jdkPath": "$JAVA_HOME",
-            "androidSdkPath": "$ANDROID_HOME"
-          }
-          BUBCONF
-          echo "Bubblewrap config:"
-          cat ~/.bubblewrap/config.json
-
-      - name: Init TWA project
-        run: |
-          mkdir -p twa-build && cd twa-build
-          # JDK質問 → n、Android SDK質問 → n、SDK path → (ANDROID_HOME)、残り → Enter
-          printf 'n\nn\n%s\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n' "$ANDROID_HOME" | \
-            bubblewrap init \
-              --manifest=https://ahixin.github.io/takken-master/manifest.json \
-              --directory=. 2>&1 || true
-
-      - name: Apply TWA manifest
-        run: |
-          cd twa-build
-          if [ ! -f twa-manifest.json ]; then
-            cp ../twa-manifest.json .
+          cd android
+          # gradle wrapper jar が無い場合はダウンロード
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            curl -sL https://github.com/gradle/gradle/raw/v8.6.0/gradle/wrapper/gradle-wrapper.jar \
+              -o gradle/wrapper/gradle-wrapper.jar
+            curl -sL https://raw.githubusercontent.com/gradle/gradle/v8.6.0/gradlew \
+              -o gradlew
+            chmod +x gradlew
           fi
-          echo "twa-manifest.json:"
-          cat twa-manifest.json
 
-      - name: Build APK
-        working-directory: twa-build
+      - name: Accept Android SDK licenses
         run: |
-          printf 'n\n%s\n\n\n\n\n\n' "$ANDROID_HOME" | bubblewrap build 2>&1
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>&1 || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-34" \
+            "build-tools;34.0.0" 2>&1
+
+      - name: Build Release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --stacktrace 2>&1
 
       - name: List APK files
         if: always()
-        run: find twa-build -name "*.apk" 2>/dev/null || echo "APK not found"
+        run: find android -name "*.apk" 2>/dev/null || echo "APK not found"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: takken-master-apk
-          path: twa-build/*.apk
+          path: android/app/build/outputs/apk/**/*.apk
           if-no-files-found: warn
