@@ -42,16 +42,16 @@ jobs:
       - name: Init TWA project
         run: |
           mkdir -p twa-build && cd twa-build
-          # config.json が既にあるので JDK 質問はスキップされる
-          # 残りの質問はデフォルト(Enter)で答えてスキップ
-          yes "" | bubblewrap init \
-            --manifest=https://ahixin.github.io/takken-master/manifest.json \
-            --directory=. 2>&1 || true
+          # "n" = 既存JDKを使う / その後の質問はすべてデフォルト(Enter)
+          # ANDROID_HOME は GitHub Actions に既にインストール済みのものを使う
+          printf 'n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n' | \
+            bubblewrap init \
+              --manifest=https://ahixin.github.io/takken-master/manifest.json \
+              --directory=. 2>&1 || true
 
       - name: Apply TWA manifest overrides
         run: |
           cd twa-build
-          # twa-manifest.json が生成されていなければルートからコピー
           if [ ! -f twa-manifest.json ]; then
             echo "twa-manifest.json not found, copying from root..."
             cp ../twa-manifest.json .
@@ -62,7 +62,7 @@ jobs:
       - name: Build APK
         working-directory: twa-build
         run: |
-          yes "" | bubblewrap build 2>&1
+          printf 'n\n\n\n\n\n\n\n\n\n' | bubblewrap build 2>&1
 
       - name: List output files
         if: always()
