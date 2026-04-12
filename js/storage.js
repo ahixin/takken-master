@@ -64,7 +64,7 @@ const Storage = {
 
   // 今日の問題数を計算
   // DEBUG_MODE=true の間は上限なし（デバッグ用）
-  DEBUG_MODE: true,
+  DEBUG_MODE: false,
   DEBUG_QUESTION_COUNT: 50,
 
   getTodayQuestionCount(streakDays) {
