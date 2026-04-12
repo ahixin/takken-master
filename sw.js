@@ -1,7 +1,7 @@
 // sw.js - Service Worker (オフラインキャッシュ + プッシュ通知)
 importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
 
-const CACHE_NAME = 'takken-master-v1';
+const CACHE_NAME = 'takken-master-v2';
 
 const PRECACHE_URLS = [
   'index.html',
