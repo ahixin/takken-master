@@ -14,7 +14,7 @@ public class MainActivity extends LauncherActivity {
 
     // ★ 本番公開時にAdMobの実際のIDに変更してください
     // テスト中はこのままでOK（テスト広告が表示されます）
-    private static final String AD_UNIT_ID = "ca-app-pub-3940256099942544/1033173712";
+    private static final String AD_UNIT_ID = "ca-app-pub-2535567367869088/3799323013";
 
     private InterstitialAd mInterstitialAd;
     private static final long AD_DELAY_MS = 90_000; // セッション開始90秒後に広告表示

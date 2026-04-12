@@ -11,7 +11,7 @@
         <!-- AdMob アプリID（★本番公開時に実際のIDに変更） -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-2535567367869088~6543462896"/>
 
         <activity
             android:name="com.takkenmaster.app.MainActivity"
