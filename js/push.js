@@ -2,7 +2,7 @@
 // ============================================================
 // SETUP: onesignal.com でアカウント作成後、以下のApp IDを設定してください
 // ============================================================
-const ONESIGNAL_APP_ID = 'YOUR_ONESIGNAL_APP_ID'; // ← ここを置き換え
+const ONESIGNAL_APP_ID = '88c4ead1-361a-4865-b5f7-5ca7e2035c5a';
 
 // 通知メッセージ（キャラがキャラ名義で送る）
 const PUSH_MESSAGES = [
