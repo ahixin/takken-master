@@ -43,6 +43,9 @@ self.addEventListener('fetch', event => {
   // POST リクエストはキャッシュしない
   if (event.request.method !== 'GET') return;
 
+  // http/https以外（chrome-extension等）はスキップ
+  if (!event.request.url.startsWith('http')) return;
+
   event.respondWith(
     caches.match(event.request)
       .then(cached => {
