@@ -3,7 +3,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.takkenmaster.app",
+      "package_name": "com.nlabostudio.takkenmaster",
       "sha256_cert_fingerprints": [
         "78:30:90:A7:24:20:90:38:D4:AC:98:94:D9:F8:FE:81:7B:6C:04:B7:6D:BC:8A:86:01:2E:12:84:39:F6:79:AE"
       ]

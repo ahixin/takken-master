@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.takkenmaster.app'
+    namespace 'com.nlabostudio.takkenmaster'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.takkenmaster.app"
+        applicationId "com.nlabostudio.takkenmaster"
         minSdk 21
         targetSdk 34
         versionCode 1
